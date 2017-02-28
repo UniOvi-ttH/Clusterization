@@ -79,12 +79,19 @@ void LikeliHOOD::readFromRootFiles()
   Float_t y = 0.;
   Float_t w = 0.;
 
-  TString treesVersion(nLep_==3 ? "2017-02-28_12.00/trees_for_opt_binning_3l_v6_withMEM" :   "2017-02-23_22.07/trees_for_opt_binning_2lss_v6");
+  bool MEM(true);
+  TString tree3l( MEM ? "2017-02-28_12.00/trees_for_opt_binning_3l_v6_withMEM" : "2017-02-23_22.07/trees_for_opt_binning_3l_v6");
+
+  TString treesVersion(nLep_==3 ? tree3l :  "2017-02-23_22.07/trees_for_opt_binning_2lss_v6");
+
+  TString memString(MEM ? "_withMEM" : "");
 
   TString kinTTB(nLep_==3 ? "kinMVA_3l_ttbar"       : "kinMVA_2lss_ttbar_withBDTv8");
-  TString kinTTV(nLep_==3 ? "kinMVA_3l_ttV_withMEM" : "kinMVA_2lss_ttV_withHj"     );
+  TString kinTTV(nLep_==3 ? Form("kinMVA_3l_ttV%s",memString.Data()) : "kinMVA_2lss_ttV_withHj"     );
 
   TString treeName("t");
+
+  cout << "Opening file: " << Form("data/%s/ev_%s_TT_FR_TT.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )) << endl;
 
   // Reading ttbar
   f = TFile::Open( Form("data/%s/ev_%s_TT_FR_TT.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )), "READ" );
