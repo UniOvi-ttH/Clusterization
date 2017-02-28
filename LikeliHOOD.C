@@ -81,12 +81,17 @@ void LikeliHOOD::readFromRootFiles()
 
 
   TString treesVersion("2017-02-23_22.07");
+  treesVersion="2017-02-28_12.00/trees_for_opt_binning_3l_v6_withMEM";
+
+  TString kinTTV("kinMVA_2lss_ttV_withHj");
+  TString kinTTB("kinMVA_2lss_ttbar_withBDTv8");
+
 
   // Reading ttbar
-  f = TFile::Open( Form("%s/data/ev_%s_TT_FR_TT.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )) );
+  f = TFile::Open( Form("data/%s/ev_%s_TT_FR_TT.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )) );
   tree = (TTree*) f->Get("tree");
-  tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &x, "kinMVA_2lss_ttbar_withBDTv8/F");
-  tree->Branch("kinMVA_2lss_ttV_withHj"     , &y, "kinMVA_2lss_ttV_withHj/F");
+  tree->Branch(kinTTB, &x, Form("%s/F",kinTTB)));
+  tree->Branch(kinTTV, &y, Form("%s/F",kinTTV)));
   tree->Branch("_weight_", &w, "_weight_/F");
   for (int entr = 0; entr < tree->GetEntries(); entr++){
     tree->GetEntry(entr);
@@ -101,10 +106,10 @@ void LikeliHOOD::readFromRootFiles()
 
 
   // Reading ttH
-  f = TFile::Open(Form("%s/data/ev_%s_TTHnobb_pow.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )) );
+  f = TFile::Open(Form("data/%s/ev_%s_TTHnobb_pow.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )) );
   tree = (TTree*) f->Get("tree");
-  tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &x, "kinMVA_2lss_ttbar_withBDTv8/F");
-  tree->Branch("kinMVA_2lss_ttV_withHj", &y, "kinMVA_2lss_ttV_withHj/F");
+  tree->Branch(kinTTB, &x, Form("%s/F",kinTTB)));
+  tree->Branch(kinTTV, &y, Form("%s/F",kinTTV)));
   tree->Branch("_weight_", &w, "_weight_/F");
   for (int entr = 0; entr < tree->GetEntries(); entr++){
     tree->GetEntry(entr);
@@ -117,11 +122,11 @@ void LikeliHOOD::readFromRootFiles()
   f->Close();
   cout << "TTH events " << fTTH.size() << endl;
 
-  // Reading ttW
-  f = TFile::Open(Form("%s/data/ev_%s_TTV.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )));
+  // Reading ttV
+  f = TFile::Open(Form("data/%s/ev_%s_TTV.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )));
   tree = (TTree*) f->Get("tree");
-  tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &x, "kinMVA_2lss_ttbar_withBDTv8/F");
-  tree->Branch("kinMVA_2lss_ttV_withHj", &y, "kinMVA_2lss_ttV_withHj/F");
+  tree->Branch(kinTTB, &x, Form("%s/F",kinTTB)));
+  tree->Branch(kinTTV, &y, Form("%s/F",kinTTV)));
   tree->Branch("_weight_", &w, "_weight_/F");
   for (int entr = 0; entr < tree->GetEntries(); entr++){
     tree->GetEntry(entr);
