@@ -89,8 +89,8 @@ void LikeliHOOD::readFromRootFiles()
   // Reading ttbar
   f = TFile::Open( Form("data/%s/ev_%s_TT_FR_TT.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )) );
   tree = (TTree*) f->Get("tree");
-  tree->Branch(kinTTB, &x, Form("%s/F",kinTTB));
-  tree->Branch((nLep_==3 ? "kinMVA_3l_ttV" : kinTTV), &y, Form("%s/F",kinTTV));
+  tree->Branch(kinTTB, &x, Form("%s/F",kinTTB.Data()));
+  tree->Branch((nLep_==3 ? "kinMVA_3l_ttV" : kinTTV), &y, Form("%s/F",kinTTV.Data()));
   tree->Branch("_weight_", &w, "_weight_/F");
   for (int entr = 0; entr < tree->GetEntries(); entr++){
     tree->GetEntry(entr);
@@ -107,8 +107,8 @@ void LikeliHOOD::readFromRootFiles()
   // Reading ttH
   f = TFile::Open(Form("data/%s/ev_%s_TTHnobb_pow.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )) );
   tree = (TTree*) f->Get("tree");
-  tree->Branch(kinTTB, &x, Form("%s/F",kinTTB)));
-  tree->Branch(kinTTV, &y, Form("%s/F",kinTTV)));
+  tree->Branch(kinTTB, &x, Form("%s/F",kinTTB.Data()));
+  tree->Branch(kinTTV, &y, Form("%s/F",kinTTV.Data()));
   tree->Branch("_weight_", &w, "_weight_/F");
   for (int entr = 0; entr < tree->GetEntries(); entr++){
     tree->GetEntry(entr);
@@ -124,8 +124,8 @@ void LikeliHOOD::readFromRootFiles()
   // Reading ttV
   f = TFile::Open(Form("data/%s/ev_%s_TTV.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )));
   tree = (TTree*) f->Get("tree");
-  tree->Branch(kinTTB, &x, Form("%s/F",kinTTB)));
-  tree->Branch(kinTTV, &y, Form("%s/F",kinTTV)));
+  tree->Branch(kinTTB, &x, Form("%s/F",kinTTB.Data()));
+  tree->Branch(kinTTV, &y, Form("%s/F",kinTTV.Data()));
   tree->Branch("_weight_", &w, "_weight_/F");
   for (int entr = 0; entr < tree->GetEntries(); entr++){
     tree->GetEntry(entr);
