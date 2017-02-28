@@ -75,26 +75,28 @@ void LikeliHOOD::readFromRootFiles()
   TBranch *bY = 0;
   TBranch *bW = 0;
 
-  Double_t x = 0.;
-  Double_t y = 0.;
-  Double_t w = 0.;
+  Float_t x = 0.;
+  Float_t y = 0.;
+  Float_t w = 0.;
 
+  TString treesVersion(nLep_==3 ? "2017-02-28_12.00/trees_for_opt_binning_3l_v6_withMEM" :   "2017-02-23_22.07/trees_for_opt_binning_2lss_v6");
 
-  TString treesVersion("2017-02-23_22.07");
-  treesVersion="2017-02-28_12.00/trees_for_opt_binning_3l_v6_withMEM";
-  
   TString kinTTB(nLep_==3 ? "kinMVA_3l_ttbar"       : "kinMVA_2lss_ttbar_withBDTv8");
   TString kinTTV(nLep_==3 ? "kinMVA_3l_ttV_withMEM" : "kinMVA_2lss_ttV_withHj"     );
-  
+
+  TString treeName("t");
+
   // Reading ttbar
-  f = TFile::Open( Form("data/%s/ev_%s_TT_FR_TT.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )) );
-  tree = (TTree*) f->Get("tree");
-  tree->Branch(kinTTB, &x, Form("%s/F",kinTTB.Data()));
-  tree->Branch((nLep_==3 ? "kinMVA_3l_ttV" : kinTTV), &y, Form("%s/F",kinTTV.Data()));
-  tree->Branch("_weight_", &w, "_weight_/F");
+  f = TFile::Open( Form("data/%s/ev_%s_TT_FR_TT.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )), "READ" );
+  tree = (TTree*) f->Get(treeName);
+  tree->SetBranchAddress(kinTTB, &x);
+  tree->SetBranchAddress((nLep_==3 ? "kinMVA_3l_ttV" : kinTTV), &y);
+  tree->SetBranchAddress("_weight_", &w);
+  cout << "weight" << endl;
   for (int entr = 0; entr < tree->GetEntries(); entr++){
     tree->GetEntry(entr);
     Point point = Point(x,(nLep_==3 ? 0.06616 + 0.7207*y : y),2*w); // Result of temporary fit for average dependence
+    cout << "x, y, w: " << x << ", " << y << ", " << w << endl;
     if (entr % 2 == 0)
       fTTbar.push_back(point);
     else
@@ -105,14 +107,15 @@ void LikeliHOOD::readFromRootFiles()
 
 
   // Reading ttH
-  f = TFile::Open(Form("data/%s/ev_%s_TTHnobb_pow.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )) );
-  tree = (TTree*) f->Get("tree");
-  tree->Branch(kinTTB, &x, Form("%s/F",kinTTB.Data()));
-  tree->Branch(kinTTV, &y, Form("%s/F",kinTTV.Data()));
-  tree->Branch("_weight_", &w, "_weight_/F");
+  f = TFile::Open(Form("data/%s/ev_%s_TTHnobb_pow.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )), "READ" );
+  tree = (TTree*) f->Get(treeName);
+  tree->SetBranchAddress(kinTTB, &x);
+  tree->SetBranchAddress(kinTTV, &y);
+  tree->SetBranchAddress("_weight_", &w);
   for (int entr = 0; entr < tree->GetEntries(); entr++){
     tree->GetEntry(entr);
     Point point = Point(x,y,2*w);
+    cout << "x, y, w: " << x << ", " << y << ", " << w << endl;
     if (entr % 2 == 0)
       fTTH.push_back(point);
     else
@@ -122,14 +125,15 @@ void LikeliHOOD::readFromRootFiles()
   cout << "TTH events " << fTTH.size() << endl;
 
   // Reading ttV
-  f = TFile::Open(Form("data/%s/ev_%s_TTV.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )));
-  tree = (TTree*) f->Get("tree");
-  tree->Branch(kinTTB, &x, Form("%s/F",kinTTB.Data()));
-  tree->Branch(kinTTV, &y, Form("%s/F",kinTTV.Data()));
-  tree->Branch("_weight_", &w, "_weight_/F");
+  f = TFile::Open(Form("data/%s/ev_%s_TTV.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )), "READ");
+  tree = (TTree*) f->Get(treeName);
+  tree->SetBranchAddress(kinTTB, &x);
+  tree->SetBranchAddress(kinTTV, &y);
+  tree->SetBranchAddress("_weight_", &w);
   for (int entr = 0; entr < tree->GetEntries(); entr++){
     tree->GetEntry(entr);
     Point point = Point(x,y,2*w);
+    cout << "x, y, w: " << x << ", " << y << ", " << w << endl;
     if (entr % 2 == 0)
       fTTW.push_back(point);
     else
@@ -142,6 +146,9 @@ void LikeliHOOD::readFromRootFiles()
 
 void LikeliHOOD::readFromTxTFiles()
 {
+  cout << "WARNING!!!! READING FROM OBSOLETE TXT FILES" << endl;
+  return;
+
   fTTbar.clear(); fTTH.clear(); fTTW.clear();
   ifstream f;
   nLep_==3 ? f.open("data/ttbar3l.txt") : f.open("data/ttbar.txt");
@@ -217,8 +224,8 @@ void LikeliHOOD::MakeLikeliHood()
     hSig->Fill(pt.fX, pt.fY, pt.fW);
   }
 
-  hSig->Scale( 1 / hSig->GetMaximum());
-  hBkg->Scale( 1 / hBkg->GetMaximum());
+  hSig->Scale( 1. / hSig->GetMaximum());
+  hBkg->Scale( 1. / hBkg->GetMaximum());
   
   for (int ix = 1; ix < hSig->GetXaxis()->GetNbins()  +1; ++ix){
     for (int iy = 1; iy < hSig->GetYaxis()->GetNbins()+1; ++iy){
@@ -308,11 +315,11 @@ void LikeliHOOD::Test()
   vector<Point>::iterator point;
   cout << "TTbar size is " << fTTbarMC.size() << endl;
   for (point = fTTbarMC.begin(); point != fTTbarMC.end(); ++point)
-    hTTbar->Fill( GetCluster( *point), 36500*point->fW);
+    hTTbar->Fill( GetCluster( *point), point->fW);
   for (point = fTTWMC.begin(); point != fTTWMC.end(); ++point)
-    hTTW->Fill( GetCluster( *point), 36500*point->fW);
+    hTTW->Fill( GetCluster( *point), point->fW);
   for (point = fTTHMC.begin(); point != fTTHMC.end(); ++point)
-    hTTH->Fill( GetCluster( *point), 36500*point->fW);
+    hTTH->Fill( GetCluster( *point), point->fW);
   cout << hTTbar->Integral() << " " << hTTbar->GetEntries() << endl;
   hTTbar->SetFillColor( kRed     );
   hTTH->SetFillColor( kBlue    );
