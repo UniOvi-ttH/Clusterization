@@ -26,6 +26,6 @@ void cookItUp()
   //p->SetMarkerColor(kRed);
   //p->SetLineColor(kRed);
   //p->Draw("PE SAME");
-  c->Print("~/www/tth/cookItUp.png");
-  c->Print("~/www/tth/cookItUp.pdf");
+  c->Print("~/www/tth/2017-02-28_12.00/cookItUp.png");
+  c->Print("~/www/tth/2017-02-28_12.00/cookItUp.pdf");
 }
