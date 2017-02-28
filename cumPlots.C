@@ -1,12 +1,12 @@
-void cumPlots()
+void prettyCum(Int_t nLep)
 {
-  TFile* f = TFile::Open("/nfs/fanae/user/vischia/www/tth/2017-02-28_12.00/cumulative_3l.root");
+  TFile* f = TFile::Open(Form("/nfs/fanae/user/vischia/www/tth/2017-02-28_12.00/cumulative_%s.root", nLep==3 ? "3l" : "2l"));
   gStyle->SetOptStat(0);
   TH1F* h = (TH1F*) f->Get("h_cumulative");
   h->GetYaxis()->SetTitle("Cumulative");
   h->GetXaxis()->SetTitle("Likelihood ratio");
   h->GetXaxis()->SetRangeUser(0.,5.);
-  int k = 5;
+  int k(nLep==3 ? 5 : 8);
   float yaxis[k];
   float xaxis[k];
   TGraph* graphs1[k];
@@ -46,9 +46,15 @@ void cumPlots()
     graphs1[bin]->Draw("L,same");
     graphs2[bin]->Draw("L,same");
   }
-  gSystem->Exec("mv ~vischia/www/tth/2017-02-28_12.00/cumulative_3l.png ~vischia/www/tth/2017-02-28_12.00/cumulative_3l_ugly.png");
-  gSystem->Exec("mv ~vischia/www/tth/2017-02-28_12.00/cumulative_3l.pdf ~vischia/www/tth/2017-02-28_12.00/cumulative_3l_ugly.pdf");
-  c->Print("~vischia/www/tth/2017-02-28_12.00/cumulative_3l.png");
-  c->Print("~vischia/www/tth/2017-02-28_12.00/cumulative_3l.pdf");
+  gSystem->Exec(Form("mv ~vischia/www/tth/2017-02-28_12.00/cumulative_%s.png ~vischia/www/tth/2017-02-28_12.00/cumulative_%s_ugly.png",nLep==3 ? "3l" : "2lss"));
+  gSystem->Exec(Form("mv ~vischia/www/tth/2017-02-28_12.00/cumulative_%s.pdf ~vischia/www/tth/2017-02-28_12.00/cumulative_%s_ugly.pdf",nLep==3 ? "3l" : "2lss"));
+  c->Print(Form("~vischia/www/tth/2017-02-28_12.00/cumulative_%s.png", nLep==3 ? "3l" : "2lss"));
+  c->Print(Form("~vischia/www/tth/2017-02-28_12.00/cumulative_%s.pdf", nLep==3 ? "3l" : "2lss"));
   
+}
+
+void cumPlots()
+{
+  prettyCum(3);
+  prettyCum(2);
 }
