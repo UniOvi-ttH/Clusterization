@@ -6,7 +6,7 @@ void cookItUp()
 
   TTree* t = (TTree*) f->Get("t");
 
-  TH2D* h = new TH2D("h", "withMEM;without MEM; with MEM", 101, -1., 1., 101, -1., 1.);
+  TH2D* h = new TH2D("h", "Temporary dependence fix;without MEM; with MEM", 101, -1., 1., 101, -1., 1.);
 
   TCanvas* c = new TCanvas("c", "c", 800, 800);
   //c->Divide(2);
