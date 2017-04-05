@@ -370,7 +370,23 @@ std::pair<vector<Point>, vector<double> > Cluster::recluster()
 }
 
 
+RecursiveClustering::RecursiveClustering(TString inputFile, Int_t k, Int_t nLep, TString fileType, Int_t trial):
+  inputFile_(inputFile),
+  fK(k),
+  nLep_(nLep),
+  trial_(trial),
+  fileType(fileType)
+{
+  ReadFromFiles();
+  StartTheThing();
+
+  cout << "Produced " << gIndex << " clusters" << endl;
+  Point point(0.353811, 0.456623,-1.);
+  cout << "Point is " << mainCluster.FindUnclusterizableCluster(point) <<endl;
+}
+
 RecursiveClustering::RecursiveClustering(Int_t k, Int_t nLep, TString fileType, Int_t trial):
+  inputFile_(""), // Needed to have a simple check on whether to use ttH or chHiggs sets
   fK(k),
   nLep_(nLep),
   trial_(trial),
@@ -386,12 +402,19 @@ RecursiveClustering::RecursiveClustering(Int_t k, Int_t nLep, TString fileType, 
 
 void RecursiveClustering::ReadFromFiles()
 {
-  if ( fileType == "txt"){
-    readFromTxTFiles();
-  }
-  else if (fileType == "root"){
-    readFromRootFiles();
-  }
+
+  if(inputFile_!="")
+    {
+      readFromRootFiles();
+    }
+  else if (fileType == "txt")
+    {
+      readFromTxTFiles();
+    }
+  else if (fileType == "root")
+    {
+      readFromRootFiles();
+    }
   else{
     cout << "Please select a correct file type" << endl;
     cout << "Script will crash in..." << endl;
@@ -438,58 +461,112 @@ void RecursiveClustering::readFromRootFiles()
   Double_t y = 0.;
   Double_t w = 0.;
 
-  // Reading ttbar
-  f = TFile::Open( (nLep_ == 3) ? "data/ttbar3l.root" : "data/ev_2lss_TT.root");
-  tree = (TTree*) f->Get("tree");
-  tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &x, "kinMVA_2lss_ttbar_withBDTv8/F");
-  tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &y, "kinMVA_2lss_ttV_withHj/F");
-  tree->Branch("_weight_", &w, "_weight_/F");
-  for (int entr = 0; entr < tree->GetEntries(); entr++){
-    tree->GetEntry(entr);
-    Point point = Point(x,y,2*w);
-    if (entr % 2 == 0)
-      fTTbar.push_back(point);
-    else
-      fTTbarMC.push_back(point);
-  }
-  f->Close();
-  cout << "TTbar events " << fTTbar.size() << endl;
+  if(inputFile_=="")
+    {
+      // Reading ttbar
+      f = TFile::Open( (nLep_ == 3) ? "data/ttbar3l.root" : "data/ev_2lss_TT.root");
+      tree = (TTree*) f->Get("tree");
+      tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &x, "kinMVA_2lss_ttbar_withBDTv8/F");
+      tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &y, "kinMVA_2lss_ttV_withHj/F");
+      tree->Branch("_weight_", &w, "_weight_/F");
+      for (int entr = 0; entr < tree->GetEntries(); entr++){
+        tree->GetEntry(entr);
+        Point point = Point(x,y,2*w);
+        if (entr % 2 == 0)
+          fTTbar.push_back(point);
+        else
+          fTTbarMC.push_back(point);
+      }
+      f->Close();
+      cout << "TTbar events " << fTTbar.size() << endl;
+      
+      
+      // Reading ttH
+      f = TFile::Open( (nLep_ == 3) ? "data/tth3l.root" : "data/ev_2lss_TTHnobb_pow.root");
+      tree = (TTree*) f->Get("tree");
+      tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &x, "kinMVA_2lss_ttbar_withBDTv8/F");
+      tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &y, "kinMVA_2lss_ttV_withHj/F");
+      tree->Branch("_weight_", &w, "_weight_/F");
+      for (int entr = 0; entr < tree->GetEntries(); entr++){
+        tree->GetEntry(entr);
+        Point point = Point(x,y,2*w);
+        if (entr % 2 == 0)
+          fTTH.push_back(point);
+        else
+          fTTHMC.push_back(point);
+      }
+      f->Close();
+      cout << "TTH events " << fTTH.size() << endl;
+      
+      // Reading ttW
+      f = TFile::Open( (nLep_ == 3) ? "data/ttw3l.root" : "data/ev_2lss_TTV.root");
+      tree = (TTree*) f->Get("tree");
+      tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &x, "kinMVA_2lss_ttbar_withBDTv8/F");
+      tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &y, "kinMVA_2lss_ttV_withHj/F");
+      tree->Branch("_weight_", &w, "_weight_/F");
+      for (int entr = 0; entr < tree->GetEntries(); entr++){
+        tree->GetEntry(entr);
+        Point point = Point(x,y,2*w);
+        if (entr % 2 == 0)
+          fTTW.push_back(point);
+        else
+          fTTWMC.push_back(point);
+      }
+      f->Close();
+      cout << "TTW events " << fTTW.size() << endl;
+    }
+  else // Charged Higgs
+    {
+      // Reading ttbar
+      f = TFile::Open(inputFile, "READ");
+      tree = (TTree*) f->Get("tOu");
+      
+      Int_t issig;
+     
+      auto b_HF    = tree->GetBranch("HF"    ); b_HF   ->SetAddress( &x    );
+      auto b_LF    = tree->GetBranch("LF"    ); b_LF   ->SetAddress( &y    );
+      auto b_wgt   = tree->GetBranch("weight"); b_wgt  ->SetAddress( &w    );
+      auto b_issig = tree->GetBranch("issig" ); b_issig->SetAddress( &issig);
+      
+      auto nentries = tree->GetEntries();
 
+      vector<Point> tempSig;
+      vector<Point> tempBkg;
 
-  // Reading ttH
-  f = TFile::Open( (nLep_ == 3) ? "data/tth3l.root" : "data/ev_2lss_TTHnobb_pow.root");
-  tree = (TTree*) f->Get("tree");
-  tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &x, "kinMVA_2lss_ttbar_withBDTv8/F");
-  tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &y, "kinMVA_2lss_ttV_withHj/F");
-  tree->Branch("_weight_", &w, "_weight_/F");
-  for (int entr = 0; entr < tree->GetEntries(); entr++){
-    tree->GetEntry(entr);
-    Point point = Point(x,y,2*w);
-    if (entr % 2 == 0)
-      fTTH.push_back(point);
-    else
-      fTTHMC.push_back(point);
-  }
-  f->Close();
-  cout << "TTH events " << fTTH.size() << endl;
-
-  // Reading ttW
-  f = TFile::Open( (nLep_ == 3) ? "data/ttw3l.root" : "data/ev_2lss_TTV.root");
-  tree = (TTree*) f->Get("tree");
-  tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &x, "kinMVA_2lss_ttbar_withBDTv8/F");
-  tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &y, "kinMVA_2lss_ttV_withHj/F");
-  tree->Branch("_weight_", &w, "_weight_/F");
-  for (int entr = 0; entr < tree->GetEntries(); entr++){
-    tree->GetEntry(entr);
-    Point point = Point(x,y,2*w);
-    if (entr % 2 == 0)
-      fTTW.push_back(point);
-    else
-      fTTWMC.push_back(point);
-  }
-  f->Close();
-  cout << "TTW events " << fTTW.size() << endl;
-
+      for (Int_t entr = 0; entr < nentries; ++entr){
+        
+        b_HF    ->GetEvent(entr);
+        b_LF    ->GetEvent(entr);
+        b_wgt   ->GetEvent(entr);
+        b_issig ->GetEvent(entr);
+        
+        tree->GetEntry(entr);
+        Point point = Point(x,y,w);
+        
+        if(issig==1) tempSig.push_back(point);
+        else if(issig==0) tempBkg.push_back(point);
+      }
+      
+      auto nsig = tempSig.size();
+      auto nbkg = tempBkg.size();
+      
+      for(Int_t iSig=0; iSig<nsig; ++iSig)
+        { 
+          if (entr % 2 == 0)
+            fTTH.push_back(tempSig[iSig]);
+          else
+            fTTHMC.push_back(tempSig[iSig]);
+        }
+      for(Int_t iBkg=0; iBkg<nbkg; ++iBkg)
+        {
+          if (entr % 2 == 0)
+            fTTbar.push_back(tempBkg[iBkg]);
+          else
+            fTTbarMC.push_back(tempBkg[iBkg]);
+        }
+      
+      f->Close();
+    }
 }
 
 void RecursiveClustering::readFromTxTFiles()

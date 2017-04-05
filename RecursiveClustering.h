@@ -55,7 +55,8 @@ class Cluster
 class RecursiveClustering
 {
  public:
-  RecursiveClustering(Int_t k, Int_t nLep=2, TString fileType="txt", Int_t trial=0) ;
+  RecursiveClustering(TString iFile, Int_t k, Int_t nLep=2, TString fileType="txt", Int_t trial=0);
+  RecursiveClustering(Int_t k, Int_t nLep=2, TString fileType="txt", Int_t trial=0);
   ~RecursiveClustering() {}
   void makeHistos();
   void VoronoiPlot();
@@ -86,6 +87,7 @@ class RecursiveClustering
   void readFromTxTFiles();
   void readFromRootFiles();
 
+  TString inputFile_;
   TString fileType;
 
   Cluster mainCluster;
