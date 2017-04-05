@@ -61,7 +61,8 @@ class RecursiveClustering
   void makeHistos();
   void VoronoiPlot();
   void VoronoiPlot2(Int_t);
-  void     Test();
+  Int_t GetFinalNbins();
+  void Test();
   void SortedTest();
 
   Double_t SignificanceAtLevel(Int_t);

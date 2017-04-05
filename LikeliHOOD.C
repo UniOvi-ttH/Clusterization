@@ -26,7 +26,21 @@ std::ostream &operator<<(std::ostream &os, Point const &point) {
   return os << "(" << point.fX << ", " << point.fY << ")";
 }
 
+LikeliHOOD::LikeliHOOD(TString inputFile, TString outputTag, Int_t nLep, TString fileType, Int_t trial):
+  inputFile_(inputFile),
+  outputTag_(outputTag),
+  nLep_(nLep),
+  trial_(trial),
+  fileType(fileType)
+{
+  ReadFromFiles();
+  StartTheThing();
+
+}
+
 LikeliHOOD::LikeliHOOD(Int_t nLep, TString fileType, Int_t trial):
+  inputFile_(""),
+  outputTag_(""),
   nLep_(nLep),
   trial_(trial),
   fileType(fileType)
@@ -38,6 +52,10 @@ LikeliHOOD::LikeliHOOD(Int_t nLep, TString fileType, Int_t trial):
 
 void LikeliHOOD::ReadFromFiles()
 {
+  if(inputFile_!="")
+    {
+      readFromRootFiles();
+    }
   if ( fileType == "txt"){
     readFromTxTFiles();
   }
@@ -79,76 +97,170 @@ void LikeliHOOD::readFromRootFiles()
   Float_t y = 0.;
   Float_t w = 0.;
 
-  bool MEM(true);
-  TString tree3l( MEM ? "2017-02-28_12.00/trees_for_opt_binning_3l_v6_withMEM" : "2017-02-23_22.07/trees_for_opt_binning_3l_v6");
+  if(inputFile_==0)
+    {
+      bool MEM(true);
+      TString tree3l( MEM ? "2017-02-28_12.00/trees_for_opt_binning_3l_v6_withMEM" : "2017-02-23_22.07/trees_for_opt_binning_3l_v6");
+      
+      TString treesVersion(nLep_==3 ? tree3l :  "2017-02-23_22.07/trees_for_opt_binning_2lss_v6");
+      
+      TString memString(MEM ? "_withMEM" : "");
+      
+      TString kinTTB(nLep_==3 ? "kinMVA_3l_ttbar"       : "kinMVA_2lss_ttbar_withBDTv8");
+      TString kinTTV(nLep_==3 ? Form("kinMVA_3l_ttV%s",memString.Data()) : "kinMVA_2lss_ttV_withHj"     );
+      
+      TString treeName("t");
+      
+      cout << "Opening file: " << Form("data/%s/ev_%s_TT_FR_TT.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )) << endl;
+      
+      // Reading ttbar
+      f = TFile::Open( Form("data/%s/ev_%s_TT_FR_TT.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )), "READ" );
+      tree = (TTree*) f->Get(treeName);
+      tree->SetBranchAddress(kinTTB, &x);
+      tree->SetBranchAddress((nLep_==3 ? "kinMVA_3l_ttV" : kinTTV), &y);
+      tree->SetBranchAddress("_weight_", &w);
+      cout << "weight" << endl;
+      for (int entr = 0; entr < tree->GetEntries(); entr++){
+        tree->GetEntry(entr);
+        Point point = Point(x,(nLep_==3 ? 0.04804 + 0.6902*y : y),2*w); // Result of temporary fit for average dependence
+        cout << "x, y, w: " << x << ", " << y << ", " << w << endl;
+        if (entr % 2 == 0)
+          fTTbar.push_back(point);
+        else
+          fTTbarMC.push_back(point);
+      }
+      f->Close();
+      cout << "TTbar events " << fTTbar.size() << endl;
+      
+      
+      // Reading ttH
+      f = TFile::Open(Form("data/%s/ev_%s_TTHnobb_pow.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )), "READ" );
+      tree = (TTree*) f->Get(treeName);
+      tree->SetBranchAddress(kinTTB, &x);
+      tree->SetBranchAddress(kinTTV, &y);
+      tree->SetBranchAddress("_weight_", &w);
+      for (int entr = 0; entr < tree->GetEntries(); entr++){
+        tree->GetEntry(entr);
+        Point point = Point(x,y,2*w);
+        cout << "x, y, w: " << x << ", " << y << ", " << w << endl;
+        if (entr % 2 == 0)
+          fTTH.push_back(point);
+        else
+          fTTHMC.push_back(point);
+      }
+      f->Close();
+      
+      if(nLep_==3)
+        {
+          // Reading ttH ext
+          f = TFile::Open(Form("data/%s/ev_%s_TTHnobb_pow_offset1.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )), "READ" );
+          tree = (TTree*) f->Get(treeName);
+          tree->SetBranchAddress(kinTTB, &x);
+          tree->SetBranchAddress(kinTTV, &y);
+          tree->SetBranchAddress("_weight_", &w);
+          for (int entr = 0; entr < tree->GetEntries(); entr++){
+            tree->GetEntry(entr);
+            Point point = Point(x,y,2*w);
+            cout << "x, y, w: " << x << ", " << y << ", " << w << endl;
+            if (entr % 2 == 0)
+              fTTH.push_back(point);
+            else
+              fTTHMC.push_back(point);
+          }
+          f->Close();
+        }
+      cout << "TTH events " << fTTH.size() << endl;
 
-  TString treesVersion(nLep_==3 ? tree3l :  "2017-02-23_22.07/trees_for_opt_binning_2lss_v6");
+      // Reading ttV
+      f = TFile::Open(Form("data/%s/ev_%s_TTV.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )), "READ");
+      tree = (TTree*) f->Get(treeName);
+      tree->SetBranchAddress(kinTTB, &x);
+      tree->SetBranchAddress(kinTTV, &y);
+      tree->SetBranchAddress("_weight_", &w);
+      for (int entr = 0; entr < tree->GetEntries(); entr++){
+        tree->GetEntry(entr);
+        Point point = Point(x,y,2*w);
+        cout << "x, y, w: " << x << ", " << y << ", " << w << endl;
+        if (entr % 2 == 0)
+          fTTW.push_back(point);
+        else
+          fTTWMC.push_back(point);
+      }
+      f->Close();
+      
+      if(nLep_==3)
+        {
+          // Reading ttV ext
+          f = TFile::Open(Form("data/%s/ev_%s_TTV_offset1.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )), "READ");
+          tree = (TTree*) f->Get(treeName);
+          tree->SetBranchAddress(kinTTB, &x);
+          tree->SetBranchAddress(kinTTV, &y);
+          tree->SetBranchAddress("_weight_", &w);
+          for (int entr = 0; entr < tree->GetEntries(); entr++){
+            tree->GetEntry(entr);
+            Point point = Point(x,y,2*w);
+            cout << "x, y, w: " << x << ", " << y << ", " << w << endl;
+            if (entr % 2 == 0)
+              fTTW.push_back(point);
+            else
+              fTTWMC.push_back(point);
+          }
+          f->Close();
+        }
+      cout << "TTW events " << fTTW.size() << endl;
+    }
+  else // Charged Higgs
+    {
+      // Reading ttbar
+      f = TFile::Open(inputFile, "READ");
+      tree = (TTree*) f->Get("tOu");
+      
+      Int_t issig;
+      
+      auto b_HF    = tree->GetBranch("HF"    ); b_HF   ->SetAddress( &x    );
+      auto b_LF    = tree->GetBranch("LF"    ); b_LF   ->SetAddress( &y    );
+      auto b_wgt   = tree->GetBranch("wgt"   ); b_wgt  ->SetAddress( &w    );
+      auto b_issig = tree->GetBranch("issig" ); b_issig->SetAddress( &issig);
+      
+      auto nentries = tree->GetEntries();
+      
+      vector<Point> tempSig;
+      vector<Point> tempBkg;
 
-  TString memString(MEM ? "_withMEM" : "");
-
-  TString kinTTB(nLep_==3 ? "kinMVA_3l_ttbar"       : "kinMVA_2lss_ttbar_withBDTv8");
-  TString kinTTV(nLep_==3 ? Form("kinMVA_3l_ttV%s",memString.Data()) : "kinMVA_2lss_ttV_withHj"     );
-
-  TString treeName("t");
-
-  cout << "Opening file: " << Form("data/%s/ev_%s_TT_FR_TT.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )) << endl;
-
-  // Reading ttbar
-  f = TFile::Open( Form("data/%s/ev_%s_TT_FR_TT.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )), "READ" );
-  tree = (TTree*) f->Get(treeName);
-  tree->SetBranchAddress(kinTTB, &x);
-  tree->SetBranchAddress((nLep_==3 ? "kinMVA_3l_ttV" : kinTTV), &y);
-  tree->SetBranchAddress("_weight_", &w);
-  cout << "weight" << endl;
-  for (int entr = 0; entr < tree->GetEntries(); entr++){
-    tree->GetEntry(entr);
-    Point point = Point(x,(nLep_==3 ? 0.06616 + 0.7207*y : y),2*w); // Result of temporary fit for average dependence
-    cout << "x, y, w: " << x << ", " << y << ", " << w << endl;
-    if (entr % 2 == 0)
-      fTTbar.push_back(point);
-    else
-      fTTbarMC.push_back(point);
-  }
-  f->Close();
-  cout << "TTbar events " << fTTbar.size() << endl;
-
-
-  // Reading ttH
-  f = TFile::Open(Form("data/%s/ev_%s_TTHnobb_pow.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )), "READ" );
-  tree = (TTree*) f->Get(treeName);
-  tree->SetBranchAddress(kinTTB, &x);
-  tree->SetBranchAddress(kinTTV, &y);
-  tree->SetBranchAddress("_weight_", &w);
-  for (int entr = 0; entr < tree->GetEntries(); entr++){
-    tree->GetEntry(entr);
-    Point point = Point(x,y,2*w);
-    cout << "x, y, w: " << x << ", " << y << ", " << w << endl;
-    if (entr % 2 == 0)
-      fTTH.push_back(point);
-    else
-      fTTHMC.push_back(point);
-  }
-  f->Close();
-  cout << "TTH events " << fTTH.size() << endl;
-
-  // Reading ttV
-  f = TFile::Open(Form("data/%s/ev_%s_TTV.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )), "READ");
-  tree = (TTree*) f->Get(treeName);
-  tree->SetBranchAddress(kinTTB, &x);
-  tree->SetBranchAddress(kinTTV, &y);
-  tree->SetBranchAddress("_weight_", &w);
-  for (int entr = 0; entr < tree->GetEntries(); entr++){
-    tree->GetEntry(entr);
-    Point point = Point(x,y,2*w);
-    cout << "x, y, w: " << x << ", " << y << ", " << w << endl;
-    if (entr % 2 == 0)
-      fTTW.push_back(point);
-    else
-      fTTWMC.push_back(point);
-  }
-  f->Close();
-  cout << "TTW events " << fTTW.size() << endl;
-
+      for (Int_t entr = 0; entr < nentries; ++entr){
+        
+        b_HF    ->GetEvent(entr);
+        b_LF    ->GetEvent(entr);
+        b_wgt   ->GetEvent(entr);
+        b_issig ->GetEvent(entr);
+        
+        tree->GetEntry(entr);
+        Point point = Point(x,y,w);
+        
+        if(issig==1) tempSig.push_back(point);
+        else if(issig==0) tempBkg.push_back(point);
+      }
+      
+      auto nsig = tempSig.size();
+      auto nbkg = tempBkg.size();
+      
+      for(Int_t iSig=0; iSig<nsig; ++iSig)
+        { 
+          if (entr % 2 == 0)
+            fTTH.push_back(tempSig[iSig]);
+          else
+            fTTHMC.push_back(tempSig[iSig]);
+        }
+      for(Int_t iBkg=0; iBkg<nbkg; ++iBkg)
+        {
+          if (entr % 2 == 0)
+            fTTbar.push_back(tempBkg[iBkg]);
+          else
+            fTTbarMC.push_back(tempBkg[iBkg]);
+        }
+      
+      f->Close();
+    }
 }
 
 void LikeliHOOD::readFromTxTFiles()
@@ -288,11 +400,11 @@ void LikeliHOOD::GETCUM() // cum for cumulative
   // hAuxHisto->FillRandom("gaus",100000);
   // hAuxHisto->Draw();
 
-  c->Print(Form("cumulative_%s.pdf", (nLep_==3 ? "3l" : "2lss")));
-  c->Print(Form("cumulative_%s.png", (nLep_==3 ? "3l" : "2lss")));
+  c->Print(Form("cumulative%s_%s.pdf", (outputTag=="" ? "" : "_"+outputTag), (nLep_==3 ? "3l" : "2lss")));
+  c->Print(Form("cumulative%s_%s.png", (outputTag=="" ? "" : "_"+outputTag), (nLep_==3 ? "3l" : "2lss")));
   
 
-  TFile* cumulativeStore = TFile::Open(Form("cumulative_%dl.root",nLep_),"recreate");
+  TFile* cumulativeStore = TFile::Open(Form("cumulative%s_%dl.root", (outputTag=="" ? "" : "_"+outputTag), nLep_),"recreate");
   h->GetCumulative()->Write();
   cumulativeStore->Close();
 
@@ -358,8 +470,8 @@ void LikeliHOOD::Test()
   c->Modified();
   c->Update();
 
-  c->Print(Form("likelihoodBased_1d_%s.pdf", (nLep_==3 ? "3l" : "2lss")));
-  c->Print(Form("likelihoodBased_1d_%s.png", (nLep_==3 ? "3l" : "2lss")));
+  c->Print(Form("likelihoodBased%s_1d_%s.pdf",  (outputTag=="" ? "" : "_"+outputTag), (nLep_==3 ? "3l" : "2lss")));
+  c->Print(Form("likelihoodBased%s_1d_%s.png",  (outputTag=="" ? "" : "_"+outputTag), (nLep_==3 ? "3l" : "2lss")));
 }
 
 Int_t LikeliHOOD::SortedThing(Int_t bin)
@@ -373,7 +485,7 @@ Int_t LikeliHOOD::SortedThing(Int_t bin)
 
 void LikeliHOOD::StoreToFile()
 {
-  TFile* binning = TFile::Open(Form("binning_%dl.root",nLep_),"recreate");
+  TFile* binning = TFile::Open(Form("binning%s_%dl.root", (outputTag=="" ? "" : "_"+outputTag), nLep_),"recreate");
   hTargetBinning = new TH2F("hTargetBinning","",100,-1.,1.,100,-1.,1.);
   for (int ix = 1; ix < hTargetBinning->GetXaxis()->GetNbins()  +1; ++ix){
     for (int iy = 1; iy < hTargetBinning->GetYaxis()->GetNbins()+1; ++iy){
@@ -436,7 +548,7 @@ void LikeliHOOD::VoronoiPlot()
 
   }
 
-  c->Print(Form("likelihoodBased_2d_%s.pdf", (nLep_==3 ? "3l" : "2lss")));
-  c->Print(Form("likelihoodBased_2d_%s.png", (nLep_==3 ? "3l" : "2lss")));
+  c->Print(Form("likelihoodBased%s_2d_%s.pdf",  (outputTag=="" ? "" : "_"+outputTag), (nLep_==3 ? "3l" : "2lss")));
+  c->Print(Form("likelihoodBased%s_2d_%s.png",  (outputTag=="" ? "" : "_"+outputTag), (nLep_==3 ? "3l" : "2lss")));
 
 }

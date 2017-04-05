@@ -20,6 +20,7 @@ class Point
 class LikeliHOOD
 {
  public:
+  LikeliHOOD( TString inputFile, TString outputTag, Int_t nLep=2, TString fileType="root", Int_t trial=0) ;
   LikeliHOOD( Int_t nLep=2, TString fileType="root", Int_t trial=0) ;
   ~LikeliHOOD() {}
   // void VoronoiPlot();
@@ -51,6 +52,8 @@ class LikeliHOOD
   void readFromTxTFiles();
   void readFromRootFiles();
   Double_t GetCluster(Point);
+  TString inputFile_;
+  TString outputTag_;
   TString fileType;
   //  Int_t   NearestClusters(Int_t);
   void     Init();

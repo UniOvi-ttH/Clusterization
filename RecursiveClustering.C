@@ -443,7 +443,7 @@ void RecursiveClustering::StartTheThing()
     }
   cout << "Final combined significance: " << combinedSignificance << endl;
   Test();
-  StoreToFile();
+  if(inputFile_=="") StoreToFile();
 }
 
 void RecursiveClustering::readFromRootFiles()
@@ -515,7 +515,7 @@ void RecursiveClustering::readFromRootFiles()
       f->Close();
       cout << "TTW events " << fTTW.size() << endl;
     }
-  else // Charged Higgs
+   else // Charged Higgs
     {
       // Reading ttbar
       f = TFile::Open(inputFile, "READ");
@@ -525,7 +525,7 @@ void RecursiveClustering::readFromRootFiles()
      
       auto b_HF    = tree->GetBranch("HF"    ); b_HF   ->SetAddress( &x    );
       auto b_LF    = tree->GetBranch("LF"    ); b_LF   ->SetAddress( &y    );
-      auto b_wgt   = tree->GetBranch("weight"); b_wgt  ->SetAddress( &w    );
+      auto b_wgt   = tree->GetBranch("wgt"   ); b_wgt  ->SetAddress( &w    );
       auto b_issig = tree->GetBranch("issig" ); b_issig->SetAddress( &issig);
       
       auto nentries = tree->GetEntries();
@@ -646,6 +646,11 @@ Double_t Cluster::d(Double_t x, Double_t y, Double_t w, Double_t m_x, Double_t m
   //return TMath::Sqrt( (x-m_x)*(x-m_x) + (y-m_y)*(y-m_y) )/(w*m_w);
   return TMath::Sqrt( (x-m_x)*(x-m_x) + (y-m_y)*(y-m_y) );
   //return TMath::Abs(x-m_x) + TMath::Abs(y-m_y);
+}
+
+Int_t RecursiveClustering::GetFinalNbins()
+{
+  return gIndex;
 }
 
 void RecursiveClustering::Test()
