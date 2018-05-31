@@ -4,14 +4,14 @@
 
 #include"TString.h"
 #include"TGraph.h"
-class Point
+class APoint
 {
  public:
   Double_t fX;
   Double_t fY;
   Double_t fW;
-  Point(){}
-  Point(Double_t x, Double_t y, Double_t w){ fX = x; fY = y; fW = w;}
+  APoint(){}
+  APoint(Double_t x, Double_t y, Double_t w){ fX = x; fY = y; fW = w;}
 
 };
 
@@ -20,22 +20,22 @@ class Cluster
 {
  public:
   Cluster(){}
-  Cluster( vector<Point> , vector<Point>, vector<Point>, Int_t, TString, Point  );
+  Cluster( vector<APoint> , vector<APoint>, vector<APoint>, Int_t, TString, APoint  );
   ~Cluster() { }
-  std::pair<vector<Point>, vector<double> > recluster();
-  Int_t    FindUnclusterizableCluster( Point );
-  TString  FindSubClusterName(Point, Int_t);
+  std::pair<vector<APoint>, vector<double> > recluster();
+  Int_t    FindUnclusterizableCluster( APoint );
+  TString  FindSubClusterName(APoint, Int_t);
   TString  GetName(){ return fName; }
-  Point    GetCentroid(){ return fCentroid;}
+  APoint    GetCentroid(){ return fCentroid;}
  private:
-  vector<Point> fTTbar;
-  vector<Point> fTTH  ;
-  vector<Point> fTTW  ;
-  vector<Point> fData ;
+  vector<APoint> fTTbar;
+  vector<APoint> fTTH  ;
+  vector<APoint> fTTW  ;
+  vector<APoint> fData ;
 
-  vector<Point> fCentroids;
+  vector<APoint> fCentroids;
 
-  Point fCentroid;
+  APoint fCentroid;
   vector<Int_t> fTgt;
   vector<Cluster> SubClusters;
   TString fName;
@@ -47,7 +47,7 @@ class Cluster
   Int_t    CalculateCentroids();
   Int_t    CalculateCentroidsDynamically();
   UInt_t    fK;
-  UInt_t    FindSubCluster( Point, bool verbose=false );
+  UInt_t    FindSubCluster( APoint, bool verbose=false );
   Double_t d(Double_t, Double_t, Double_t, Double_t, Double_t, Double_t);
 
 };
@@ -71,13 +71,13 @@ class RecursiveClustering
 
  protected:
   // Monte Carlo
-  vector<Point>  fTTbar;
-  vector<Point>  fTTH;
-  vector<Point>  fTTW;
-  vector<Point> fTTbarMC;
-  vector<Point> fTTHMC;
-  vector<Point> fTTWMC;
-  vector<Point> fCentroids;
+  vector<APoint>  fTTbar;
+  vector<APoint>  fTTH;
+  vector<APoint>  fTTW;
+  vector<APoint> fTTbarMC;
+  vector<APoint> fTTHMC;
+  vector<APoint> fTTWMC;
+  vector<APoint> fCentroids;
   vector<double> fSignificances;
   vector<TGraph*> contours;
 
@@ -89,6 +89,7 @@ class RecursiveClustering
   void readFromRootFiles();
 
   TString inputFile_;
+  TString iDir_;
   TString fileType;
 
   Cluster mainCluster;
