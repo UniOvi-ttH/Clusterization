@@ -26,9 +26,10 @@ std::ostream &operator<<(std::ostream &os, Point const &point) {
   return os << "(" << point.fX << ", " << point.fY << ")";
 }
 
-LikeliHOOD::LikeliHOOD(TString inputFile, TString outputTag, Int_t nLep, TString fileType, Int_t trial):
+LikeliHOOD::LikeliHOOD(TString inputFile, TString outputTag, Int_t nTargetBins, Int_t nLep, TString fileType, Int_t trial):
   inputFile_(inputFile),
   outputTag_(outputTag),
+  nTargetBins_(nTargetBins),
   nLep_(nLep),
   trial_(trial),
   fileType(fileType)
@@ -38,9 +39,11 @@ LikeliHOOD::LikeliHOOD(TString inputFile, TString outputTag, Int_t nLep, TString
 
 }
 
-LikeliHOOD::LikeliHOOD(Int_t nLep, TString fileType, Int_t trial):
+LikeliHOOD::LikeliHOOD(TString iDir, Int_t nTargetBins, Int_t nLep, TString fileType, Int_t trial):
   inputFile_(""),
+  inputDir_(inputDir),
   outputTag_(""),
+  nTargetBins_(nTargetBins),
   nLep_(nLep),
   trial_(trial),
   fileType(fileType)
@@ -212,7 +215,7 @@ void LikeliHOOD::readFromRootFiles()
   else // Charged Higgs
     {
       // Reading ttbar
-      f = TFile::Open(inputFile, "READ");
+      f = TFile::Open(inputFile_, "READ");
       tree = (TTree*) f->Get("tOu");
       
       Int_t issig;
@@ -246,17 +249,25 @@ void LikeliHOOD::readFromRootFiles()
       
       for(Int_t iSig=0; iSig<nsig; ++iSig)
         { 
-          if (entr % 2 == 0)
-            fTTH.push_back(tempSig[iSig]);
+          if (iSig % 2 == 0)
+            {
+              fTTH.push_back(tempSig[iSig]);
+            }
           else
-            fTTHMC.push_back(tempSig[iSig]);
+            {
+              fTTHMC.push_back(tempSig[iSig]);
+            }
         }
       for(Int_t iBkg=0; iBkg<nbkg; ++iBkg)
         {
-          if (entr % 2 == 0)
-            fTTbar.push_back(tempBkg[iBkg]);
+          if (iBkg % 2 == 0)
+            {
+              fTTbar.push_back(tempBkg[iBkg]);
+            }
           else
-            fTTbarMC.push_back(tempBkg[iBkg]);
+            {
+              fTTbarMC.push_back(tempBkg[iBkg]);
+            }
         }
       
       f->Close();
@@ -329,6 +340,7 @@ void LikeliHOOD::MakeLikeliHood()
 {
 
   Int_t initialSplitting(nLep_==3 ? 10 : 20);
+  if(inputFile_!="") initialSplitting=20;
 
   hSig = new TH2F("hSig","",initialSplitting,-1.,1.,initialSplitting,-1.,1.);
   hBkg = new TH2F("hBkg","",initialSplitting,-1.,1.,initialSplitting,-1.,1.);
@@ -349,8 +361,10 @@ void LikeliHOOD::MakeLikeliHood()
   for (int ix = 1; ix < hSig->GetXaxis()->GetNbins()  +1; ++ix){
     for (int iy = 1; iy < hSig->GetYaxis()->GetNbins()+1; ++iy){
       int bin = hSig->GetBin(ix,iy);
-      hSig->SetBinContent(bin, TMath::Max(1e-5,hSig->GetBinContent(bin)));
-      hBkg->SetBinContent(bin, TMath::Max(1e-5,hBkg->GetBinContent(bin)));
+      //hSig->SetBinContent(bin, TMath::Max(1e-5,hSig->GetBinContent(bin)));
+      //hBkg->SetBinContent(bin, TMath::Max(1e-5,hBkg->GetBinContent(bin)));
+      hSig->SetBinContent(bin, TMath::Max(0.,hSig->GetBinContent(bin)));
+      hBkg->SetBinContent(bin, TMath::Max(0.,hBkg->GetBinContent(bin)));
     }
   }
 
@@ -364,6 +378,7 @@ void LikeliHOOD::MakeLikeliHood()
   hRtio = (TH2F*) hSig->Clone("hRtio");
   hRtio->Divide(hBkg);
   TCanvas* c3 = new TCanvas();
+  gPad->SetLogz();
   hRtio->Draw("colz");
   
 
@@ -388,6 +403,7 @@ void LikeliHOOD::GETCUM() // cum for cumulative
   h->Scale( 1 / h->Integral());
   h->GetCumulative()->Draw();
   int nq(nLep_==3 ? 5 : 8);
+  if(nTargetBins_!=0) nq=nTargetBins_;
   Double_t xq[nq+1]; Double_t yq[nq+1];
   for (Int_t i=0;i<nq;i++) xq[i] = Float_t(i)/nq;
   xq[nq] = 0.99999;
@@ -400,11 +416,13 @@ void LikeliHOOD::GETCUM() // cum for cumulative
   // hAuxHisto->FillRandom("gaus",100000);
   // hAuxHisto->Draw();
 
-  c->Print(Form("cumulative%s_%s.pdf", (outputTag=="" ? "" : "_"+outputTag), (nLep_==3 ? "3l" : "2lss")));
-  c->Print(Form("cumulative%s_%s.png", (outputTag=="" ? "" : "_"+outputTag), (nLep_==3 ? "3l" : "2lss")));
+  c->Print(Form("cumulative%s_%s.pdf", ((outputTag_=="") ? "" : TString("_"+outputTag_).Data()), (nLep_==3 ? "3l" : "2lss")));
+  c->Print(Form("cumulative%s_%s.png", ((outputTag_=="") ? "" : TString("_"+outputTag_).Data()), (nLep_==3 ? "3l" : "2lss")));
+  c->Print(Form("cumulative%s_%s.root", ((outputTag_=="") ? "" : TString("_"+outputTag_).Data()), (nLep_==3 ? "3l" : "2lss")));
+
   
 
-  TFile* cumulativeStore = TFile::Open(Form("cumulative%s_%dl.root", (outputTag=="" ? "" : "_"+outputTag), nLep_),"recreate");
+  TFile* cumulativeStore = TFile::Open(Form("cumulative%s_%dl.root", ((outputTag_=="") ? "" : TString("_"+outputTag_).Data()), nLep_),"recreate");
   h->GetCumulative()->Write();
   cumulativeStore->Close();
 
@@ -470,8 +488,15 @@ void LikeliHOOD::Test()
   c->Modified();
   c->Update();
 
-  c->Print(Form("likelihoodBased%s_1d_%s.pdf",  (outputTag=="" ? "" : "_"+outputTag), (nLep_==3 ? "3l" : "2lss")));
-  c->Print(Form("likelihoodBased%s_1d_%s.png",  (outputTag=="" ? "" : "_"+outputTag), (nLep_==3 ? "3l" : "2lss")));
+  TFile* histofile = TFile::Open(Form("likelihoodBased%s_1d_%s_histos.root",  ((outputTag_=="") ? "" : TString("_"+outputTag_).Data()), (nLep_==3 ? "3l" : "2lss")) , "RECREATE");
+  histofile->cd();
+  hTTbar->Write();
+  hTTH->Write();
+  histofile->Close();
+  
+  c->Print(Form("likelihoodBased%s_1d_%s.pdf",  ((outputTag_=="") ? "" : TString("_"+outputTag_).Data()), (nLep_==3 ? "3l" : "2lss")));
+  c->Print(Form("likelihoodBased%s_1d_%s.png",  ((outputTag_=="") ? "" : TString("_"+outputTag_).Data()), (nLep_==3 ? "3l" : "2lss")));
+  c->Print(Form("likelihoodBased%s_1d_%s.root",  ((outputTag_=="") ? "" : TString("_"+outputTag_).Data()), (nLep_==3 ? "3l" : "2lss")));
 }
 
 Int_t LikeliHOOD::SortedThing(Int_t bin)
@@ -485,7 +510,7 @@ Int_t LikeliHOOD::SortedThing(Int_t bin)
 
 void LikeliHOOD::StoreToFile()
 {
-  TFile* binning = TFile::Open(Form("binning%s_%dl.root", (outputTag=="" ? "" : "_"+outputTag), nLep_),"recreate");
+  TFile* binning = TFile::Open(Form("binning%s_%dl.root", ((outputTag_=="") ? "" : TString("_"+outputTag_).Data()), nLep_),"recreate");
   hTargetBinning = new TH2F("hTargetBinning","",100,-1.,1.,100,-1.,1.);
   for (int ix = 1; ix < hTargetBinning->GetXaxis()->GetNbins()  +1; ++ix){
     for (int iy = 1; iy < hTargetBinning->GetYaxis()->GetNbins()+1; ++iy){
@@ -493,7 +518,7 @@ void LikeliHOOD::StoreToFile()
       int k   = GetCluster( Point(hTargetBinning->GetXaxis()->GetBinCenter(ix),
 				  hTargetBinning->GetYaxis()->GetBinCenter(iy),-1));
       cout << hTargetBinning->GetXaxis()->GetBinCenter(ix) << " "
-	   << hTargetBinning->GetYaxis()->GetBinCenter(iy) << k << endl;
+	   << hTargetBinning->GetYaxis()->GetBinCenter(iy) << " " << k << endl;
       hTargetBinning->SetBinContent(bin,k);
     }
   }
@@ -548,7 +573,8 @@ void LikeliHOOD::VoronoiPlot()
 
   }
 
-  c->Print(Form("likelihoodBased%s_2d_%s.pdf",  (outputTag=="" ? "" : "_"+outputTag), (nLep_==3 ? "3l" : "2lss")));
-  c->Print(Form("likelihoodBased%s_2d_%s.png",  (outputTag=="" ? "" : "_"+outputTag), (nLep_==3 ? "3l" : "2lss")));
+  c->Print(Form("likelihoodBased%s_2d_%s.pdf",  ((outputTag_=="") ? "" : TString("_"+outputTag_).Data()), (nLep_==3 ? "3l" : "2lss")));
+  c->Print(Form("likelihoodBased%s_2d_%s.png",  ((outputTag_=="") ? "" : TString("_"+outputTag_).Data()), (nLep_==3 ? "3l" : "2lss")));
+  c->Print(Form("likelihoodBased%s_2d_%s.root",  ((outputTag_=="") ? "" : TString("_"+outputTag_).Data()), (nLep_==3 ? "3l" : "2lss")));
 
 }
