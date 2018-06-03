@@ -2,7 +2,9 @@ void cookItUp()
 {
 
   gStyle->SetOptFit(1111111);
-  TFile* f = TFile::Open("data/2017-02-28_12.00/trees_for_opt_binning_3l_v6_withMEM/ev_3l_TTV.root");
+  gSystem->Exec("hadd -f temp.root data/2017-02-28_12.00/trees_for_opt_binning_3l_v6_withMEM/ev_3l_TTV.root data/2017-02-28_12.00/trees_for_opt_binning_3l_v6_withMEM/ev_3l_TTV_offset1.root");
+
+  TFile* f = TFile::Open("temp.root");
 
   TTree* t = (TTree*) f->Get("t");
 

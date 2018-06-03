@@ -58,6 +58,10 @@ Cluster::Cluster( vector<APoint> TTbar, vector<APoint> TTH  , vector<APoint> TTW
   fData.insert( fData.end(), fTTW.begin(),fTTW.end());
   fData.insert( fData.end(), fTTH.begin(),fTTH.end());
 
+  cout << "Size ttH: " << fTTH.size() << endl;
+  cout << "Size TT:  " << fTTbar.size() << endl;
+  cout << "Size ttV: " << fTTW.size() << endl;
+  cout << "Size all: " << fData.size() << ", sum " << fTTH.size()+fTTbar.size()+fTTW.size() << endl;
   fIsClusterizable = true;
   fK = k;
   fCentroid = centroid;
@@ -271,9 +275,9 @@ std::pair<vector<APoint>, vector<double> > Cluster::recluster()
     for (size_t n = 0; n < fTTbar.size(); ++n){
       if ( FindSubCluster( fTTbar[n] ) == k) TTbar.push_back( fTTbar[n]);
     }
-    if (TTH.size() == 0) fIsClusterizable = false;
-    else if (TTbar.size() == 0) fIsClusterizable = false;
-    else if (TTW  .size() == 0) fIsClusterizable = false;
+    if (TTH.size() == 0)        { cout << "Size of TTH is zero!" << endl; fIsClusterizable = false;}
+    else if (TTbar.size() == 0) { cout << "Size of TT  is zero!" << endl; fIsClusterizable = false;}
+    else if (TTW  .size() == 0) { cout << "Size of TTW is zero!" << endl; fIsClusterizable = false;}
     else{
       //if (36500*TTH.size()*TTH[0].fW < 5.)
       if (36500*sumTTH < 1.)
@@ -379,7 +383,7 @@ RecursiveClustering::RecursiveClustering(TString inputFile, Int_t k, Int_t nLep,
   fK(k),
   nLep_(nLep),
   trial_(trial),
-  fileType(fileType)
+  fileType_(fileType)
 {
   ReadFromFiles();
   StartTheThing();
@@ -395,7 +399,7 @@ RecursiveClustering::RecursiveClustering(Int_t k, Int_t nLep, TString iDir, TStr
   nLep_(nLep),
   iDir_(iDir),
   trial_(trial),
-  fileType(fileType)
+  fileType_(fileType)
 {
   ReadFromFiles();
   StartTheThing();
@@ -412,16 +416,16 @@ void RecursiveClustering::ReadFromFiles()
     {
       readFromRootFiles();
     }
-  else if (fileType == "txt")
+  else if (fileType_ == "txt")
     {
       readFromTxTFiles();
     }
-  else if (fileType == "root")
+  else if (fileType_ == "root")
     {
       readFromRootFiles();
     }
   else{
-    cout << "Please select a correct file type" << endl;
+    cout << "[RecursiveClustering] Please select a correct file type (currently you provided: " << fileType_ << ")!"<< endl;
     cout << "Script will crash in..." << endl;
     cout << "...3" << endl;
     sleep(1);
@@ -476,10 +480,13 @@ void RecursiveClustering::readFromRootFiles()
       if(iDir_=="")
         f = TFile::Open( (nLep_ == 3) ? "data/ttbar3l.root" : "data/ev_2lss_TT.root");
       else
-        f = TFile::Open( iDir_ + "outfile_" + (nLep_==3 ? "3l" : "2lss") + "_TT.root");
-      tree = (TTree*) f->Get("tree");
-      tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &x, "kinMVA_2lss_ttbar_withBDTv8/F");
-      tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &y, "kinMVA_2lss_ttV_withHj/F");
+        f = TFile::Open( "data/" + iDir_ + "/outfile_" + (nLep_==3 ? "3l" : "2lss") + "_TT.root");
+      tree = (TTree*) f->Get("t");
+      //tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &x, "kinMVA_2lss_ttbar_withBDTv8/F");
+      //tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &y, "kinMVA_2lss_ttV_withHj/F");
+      tree->Branch("kinMVA_2lss_ttbar_withBDTrTT", &x , "kinMVA_2lss_ttbar_withBDTrTT/F");
+      tree->Branch("kinMVA_2lss_ttV_withHj_rTT"  , &y , "kinMVA_2lss_ttV_withHj_rTT/F");
+
       tree->Branch("_weight_", &w, "_weight_/F");
       for (int entr = 0; entr < tree->GetEntries(); entr++){
         tree->GetEntry(entr);
@@ -497,10 +504,12 @@ void RecursiveClustering::readFromRootFiles()
       if(iDir_=="")
         f = TFile::Open( (nLep_ == 3) ? "data/tth3l.root" : "data/ev_2lss_TTHnobb_pow.root");
       else
-        f = TFile::Open( iDir_ + "outfile_" + (nLep_==3 ? "3l" : "2lss") + "_TTHnobb.root");
-      tree = (TTree*) f->Get("tree");
-      tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &x, "kinMVA_2lss_ttbar_withBDTv8/F");
-      tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &y, "kinMVA_2lss_ttV_withHj/F");
+        f = TFile::Open( "data/" + iDir_ + "/outfile_" + (nLep_==3 ? "3l" : "2lss") + "_TTHnobb_pow.root");
+      tree = (TTree*) f->Get("t");
+      //tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &x, "kinMVA_2lss_ttbar_withBDTv8/F");
+      //tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &y, "kinMVA_2lss_ttV_withHj/F");
+      tree->Branch("kinMVA_2lss_ttbar_withBDTrTT", &x , "kinMVA_2lss_ttbar_withBDTrTT/F");
+      tree->Branch("kinMVA_2lss_ttV_withHj_rTT"  , &y , "kinMVA_2lss_ttV_withHj_rTT/F");
       tree->Branch("_weight_", &w, "_weight_/F");
       for (int entr = 0; entr < tree->GetEntries(); entr++){
         tree->GetEntry(entr);
@@ -517,10 +526,12 @@ void RecursiveClustering::readFromRootFiles()
       if(iDir_=="")
         f = TFile::Open( (nLep_ == 3) ? "data/ttw3l.root" : "data/ev_2lss_TTV.root");
       else
-        f = TFile::Open( iDir_ + "outfile_" + (nLep_==3 ? "3l" : "2lss") + "_TTV.root");
-      tree = (TTree*) f->Get("tree");
-      tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &x, "kinMVA_2lss_ttbar_withBDTv8/F");
-      tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &y, "kinMVA_2lss_ttV_withHj/F");
+        f = TFile::Open( "data/" + iDir_ + "/outfile_" + (nLep_==3 ? "3l" : "2lss") + "_TTV.root");
+      tree = (TTree*) f->Get("t");
+      //tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &x, "kinMVA_2lss_ttbar_withBDTv8/F");
+      //tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &y, "kinMVA_2lss_ttV_withHj/F");
+      tree->Branch("kinMVA_2lss_ttbar_withBDTrTT", &x , "kinMVA_2lss_ttbar_withBDTrTT/F");
+      tree->Branch("kinMVA_2lss_ttV_withHj_rTT"  , &y , "kinMVA_2lss_ttV_withHj_rTT/F");
       tree->Branch("_weight_", &w, "_weight_/F");
       for (int entr = 0; entr < tree->GetEntries(); entr++){
         tree->GetEntry(entr);

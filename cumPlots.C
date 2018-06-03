@@ -1,6 +1,9 @@
+TString dir("/nfs/fanae/user/vischia/www/tth/2017-02-28_12.00/mem_ext");
+
+
 void prettyCum(Int_t nLep)
 {
-  TFile* f = TFile::Open(Form("/nfs/fanae/user/vischia/www/tth/2017-02-28_12.00/cumulative_%s.root", nLep==3 ? "3l" : "2l"));
+  TFile* f = TFile::Open(Form("%s/cumulative_%s.root", dir.Data(), nLep==3 ? "3l" : "2l"));
   gStyle->SetOptStat(0);
   TH1F* h = (TH1F*) f->Get("h_cumulative");
   h->GetYaxis()->SetTitle("Cumulative");
@@ -46,10 +49,10 @@ void prettyCum(Int_t nLep)
     graphs1[bin]->Draw("L,same");
     graphs2[bin]->Draw("L,same");
   }
-  gSystem->Exec(Form("mv ~vischia/www/tth/2017-02-28_12.00/cumulative_%s.png ~vischia/www/tth/2017-02-28_12.00/cumulative_%s_ugly.png",nLep==3 ? "3l" : "2lss"));
-  gSystem->Exec(Form("mv ~vischia/www/tth/2017-02-28_12.00/cumulative_%s.pdf ~vischia/www/tth/2017-02-28_12.00/cumulative_%s_ugly.pdf",nLep==3 ? "3l" : "2lss"));
-  c->Print(Form("~vischia/www/tth/2017-02-28_12.00/cumulative_%s.png", nLep==3 ? "3l" : "2lss"));
-  c->Print(Form("~vischia/www/tth/2017-02-28_12.00/cumulative_%s.pdf", nLep==3 ? "3l" : "2lss"));
+  gSystem->Exec(Form("mv %s/cumulative_%s.png %s/cumulative_%s_ugly.png", dir.Data(), nLep==3 ? "3l" : "2lss", dir.Data(), nLep==3 ? "3l" : "2lss"));
+  gSystem->Exec(Form("mv %s/cumulative_%s.pdf %s/cumulative_%s_ugly.pdf", dir.Data(), nLep==3 ? "3l" : "2lss", dir.Data(), nLep==3 ? "3l" : "2lss"));
+  c->Print(Form("%s/cumulative_%s.png", dir.Data(), nLep==3 ? "3l" : "2lss"));
+  c->Print(Form("%s/cumulative_%s.pdf", dir.Data(), nLep==3 ? "3l" : "2lss"));
   
 }
 

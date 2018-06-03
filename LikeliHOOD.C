@@ -41,7 +41,7 @@ LikeliHOOD::LikeliHOOD(TString inputFile, TString outputTag, Int_t nTargetBins, 
 
 LikeliHOOD::LikeliHOOD(TString iDir, Int_t nTargetBins, Int_t nLep, TString fileType, Int_t trial):
   inputFile_(""),
-  inputDir_(inputDir),
+  iDir_(iDir),
   outputTag_(""),
   nTargetBins_(nTargetBins),
   nLep_(nLep),
@@ -66,7 +66,7 @@ void LikeliHOOD::ReadFromFiles()
     readFromRootFiles();
   }
   else{
-    cout << "Please select a correct file type" << endl;
+    cout << "[LikeliHOOD] Please select a correct file type" << endl;
     cout << "Script will crash in..." << endl;
     cout << "...3" << endl;
     sleep(1);
