@@ -318,6 +318,22 @@ void BottomUpClustering::GetEventsInCluster(Int_t k, Double_t& ttbar, Double_t& 
   return;
 }
 
+
+bool BottomUpClustering::MergeZeroBins(Int_t k1, Int_t k2)
+{
+  Double_t ttbar1, ttv1, tth1;
+  Double_t ttbar2, ttv2, tth2;
+  Double_t ttbar1_e, ttv1_e, tth1_e;
+  Double_t ttbar2_e, ttv2_e, tth2_e;
+  GetEventsInCluster(k1,ttbar1, ttv1, tth1,ttbar1_e, ttv1_e, tth1_e);
+  GetEventsInCluster(k2,ttbar2, ttv2, tth2,ttbar2_e, ttv2_e, tth2_e);
+
+  if((ttbar1+ttv1==0 || ttbar2+ttv2==0) && AreClustersTogether(k1, k2)) return true;
+  else                                 return false;
+  
+}
+
+
 Double_t BottomUpClustering::GetFOM(Int_t k1, Int_t k2)
 {
   Double_t ttbar1, ttv1, tth1;
@@ -339,18 +355,37 @@ Double_t BottomUpClustering::GetFOM(Int_t k1, Int_t k2)
   
   //  cout << ttbar1 << " " <<  ttv1 << " " <<  tth1 << endl;
   
-  if (!(ttbar1 *ttv1*tth1 == 0) != !(ttbar2 *ttv2*tth2 == 0)){
+  //if (!(ttbar1 *ttv1*tth1 == 0) != !(ttbar2 *ttv2*tth2 == 0)){
+  if (!(ttbar1 *ttv1 == 0) != !(ttbar2 *ttv2 == 0)){
     return 0.;
   }
   // if the fom is close to zero, the clusters are the same
   //  cout << TMath::Power( (propTTbar1 - propTTbar2) / (propTTbar1_e + propTTbar2_e), 2) + TMath::Power( (propTTV1 - propTTV2) / (propTTV1_e + propTTV2_e), 2) + 37000*2.*(ttbar1+ ttv1+ tth1+ttbar2+ ttv2+ tth2) << endl;
-  return TMath::Power( (propTTbar1 - propTTbar2) / (propTTbar1_e + propTTbar2_e), 2) + TMath::Power( (propTTV1 - propTTV2) / (propTTV1_e + propTTV2_e), 2) + 6/(ttbar1_e / ttbar1 + ttv1_e/ttv1+ tth1_e/tth1+ttbar2_e/ttbar2+ ttv2_e/ttv2+ tth2_e/tth2);
 
+  // FOM1(TMath::Power( (propTTbar1 - propTTbar2) / (propTTbar1_e + propTTbar2_e), 2) + TMath::Power( (propTTV1 - propTTV2) / (propTTV1_e + propTTV2_e), 2) + 6/(ttbar1_e / ttbar1 + ttv1_e/ttv1+ tth1_e/tth1+ttbar2_e/ttbar2+ ttv2_e/ttv2+ tth2_e/tth2));
+
+  Double_t FOM1(TMath::Power( propTTbar1 / propTTbar1_e, 2) + TMath::Power( propTTV1 / propTTV1_e, 2));
+  Double_t FOM2(TMath::Power( propTTbar2 / propTTbar2_e, 2) + TMath::Power( propTTV2 / propTTV2_e, 2));
+  Double_t FOMC(TMath::Power( (propTTbar1 - propTTbar2) / (propTTbar1_e + propTTbar2_e), 2) + TMath::Power( (propTTV1 - propTTV2) / (propTTV1_e + propTTV2_e), 2));
+
+
+
+  // FOM1 = TMath::Power( propTTbar1 / propTTbar1_e , 2) + TMath::Power( propTTV1 / propTTV1_e, 2) + 6/(ttbar1_e / ttbar1 + ttv1_e/ttv1+ tth1_e/tth1);
+  // FOM2 = TMath::Power(  propTTbar2 / propTTbar2_e, 2) + TMath::Power( propTTV2 / propTTV2_e, 2) + 6/(ttbar2_e/ttbar2+ ttv2_e/ttv2+ tth2_e/tth2);
+  // FOMC = TMath::Power( (propTTbar1 - propTTbar2) / (propTTbar1_e + propTTbar2_e), 2) + TMath::Power( (propTTV1 - propTTV2) / (propTTV1_e + propTTV2_e), 2) + 6/(ttbar1_e / ttbar1 + ttv1_e/ttv1+ tth1_e/tth1+ttbar2_e/ttbar2+ ttv2_e/ttv2+ tth2_e/tth2);
+
+
+  if(FOMC > FOM1 && FOMC > FOM2)
+    return FOMC;
+  else 
+    return 0.;
 }
 
 void BottomUpClustering::Recluster()
 {
-  for (int it = 0; it < 390; ++it){
+  int daSize(clusters.size());
+
+  while (true){
     Double_t minFOM = 1000;
     std::pair<Int_t,Int_t> bestPair; 
     int index1 = 0;
@@ -360,7 +395,8 @@ void BottomUpClustering::Recluster()
     for (unsigned int k1 = 0; k1 < clusters.size(); ++k1){
       for (unsigned int k2 = 0; k2 < clusters.size(); ++k2){
 	if (k2 <= k1) continue;
-	if (!AreClustersTogether(k1,k2)) continue;
+	//if (!AreClustersTogether(k1,k2)) continue;
+
 	Double_t fom = GetFOM(k1,k2);
 	if (fom < minFOM){
 	  bestPair = std::make_pair(k1,k2);
@@ -385,9 +421,18 @@ void BottomUpClustering::Recluster()
     clusters = newClusters;
     std::random_shuffle(clusters.begin(),clusters.end());
     ReMakeTarget();
+
+    // Get out when bins stop getting merged
+    if(clusters.size() == daSize)
+      break;
+    daSize = clusters.size();
   }
+
   TCanvas* c1 = new TCanvas();
   hTargetBinning->Draw("colz text");
+  c1->Print("binning_bottomUpClustering.png");
+  c1->Print("binning_bottomUpClustering.pdf");
+  StoreToFile();
   TCanvas* c2 = new TCanvas();
   Test();
   return;
@@ -447,6 +492,8 @@ void BottomUpClustering::Test()
   c->Modified();
   c->Update();
 
+  c->Print("binning1d_bottomUpClustering.png");
+  c->Print("binning1d_bottomUpClustering.pdf");
 
   // c->Print(Form("recursiveNoOrdering_%dl_trial%d.png",nLep_,trial_));
   // c->Print(Form("recursiveNoOrdering_%dl_trial%d.pdf",nLep_,trial_));
@@ -479,7 +526,7 @@ Int_t BottomUpClustering::SortedThing(Int_t bin)
 
 void BottomUpClustering::StoreToFile()
 {
-  TFile* binning = TFile::Open(Form("binning_%dl.root",nLep_),"recreate");
+  TFile* binning = TFile::Open(Form("binning_bottomUpClustering_%dl.root",nLep_),"recreate");
   hTargetBinning->Write();
   binning->Close();
 }

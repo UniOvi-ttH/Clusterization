@@ -60,6 +60,7 @@ class BottomUpClustering
   Int_t    SortedThing(Int_t);
   void     MakeFineBinning();
   void     ReMakeTarget();
+  bool     MergeZeroBins(Int_t, Int_t);
   void     GetEventsInCluster(Int_t, Double_t&, Double_t&, Double_t&, Double_t&, Double_t&, Double_t&);
   void     GetTheContours();
 
