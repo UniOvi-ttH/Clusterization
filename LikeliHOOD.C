@@ -114,7 +114,7 @@ void LikeliHOOD::readFromRootFiles()
       
       TString treeName("t");
       
-      cout << "Opening file: " << Form("data/%s/ev_%s_TT_FR_TT.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )) << endl;
+      cout << "[LikeliHOOD] Opening file: " << Form("data/%s/ev_%s_TT_FR_TT.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )) << endl;
       
       // Reading ttbar
       f = TFile::Open( Form("data/%s/ev_%s_TT_FR_TT.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )), "READ" );
@@ -215,6 +215,7 @@ void LikeliHOOD::readFromRootFiles()
   else // Charged Higgs
     {
       // Reading ttbar
+      cout << "[LikeliHOOD] Input file given (chhiggs case). Opening file " << inputFile_ << "..." << endl;
       f = TFile::Open(inputFile_, "READ");
       tree = (TTree*) f->Get("tOu");
       
