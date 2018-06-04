@@ -59,7 +59,7 @@ void LikeliHOOD::ReadFromFiles()
     {
       readFromRootFiles();
     }
-  if ( fileType == "txt"){
+  else if ( fileType == "txt"){
     readFromTxTFiles();
   }
   else if (fileType == "root"){
@@ -100,7 +100,7 @@ void LikeliHOOD::readFromRootFiles()
   Float_t y = 0.;
   Float_t w = 0.;
 
-  if(inputFile_==0)
+  if(inputFile_=="")
     {
       bool MEM(true);
       TString tree3l( MEM ? "2017-02-28_12.00/trees_for_opt_binning_3l_v6_withMEM" : "2017-02-23_22.07/trees_for_opt_binning_3l_v6");
@@ -114,19 +114,22 @@ void LikeliHOOD::readFromRootFiles()
       
       TString treeName("t");
       
-      cout << "[LikeliHOOD] Opening file: " << Form("data/%s/ev_%s_TT_FR_TT.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )) << endl;
-      
+      //cout << "[LikeliHOOD] Opening file: " << Form("data/%s/ev_%s_TT_FR_TT.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )) << endl;
+      cout << "[LikeliHOOD] Opening file: " << "data/"<< iDir_ << "/outfile_" << (nLep_==3 ? "3l" : "2lss") << "_TT.root" << endl;
       // Reading ttbar
-      f = TFile::Open( Form("data/%s/ev_%s_TT_FR_TT.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )), "READ" );
+      ///// f = TFile::Open( Form("data/%s/ev_%s_TT_FR_TT.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )), "READ" );
+      f = TFile::Open( "data/" + iDir_ + "/outfile_" + (nLep_==3 ? "3l" : "2lss") + "_TT.root");
       tree = (TTree*) f->Get(treeName);
-      tree->SetBranchAddress(kinTTB, &x);
-      tree->SetBranchAddress((nLep_==3 ? "kinMVA_3l_ttV" : kinTTV), &y);
+      //// tree->SetBranchAddress(kinTTB, &x);
+      //// tree->SetBranchAddress((nLep_==3 ? "kinMVA_3l_ttV" : kinTTV), &y); 
+      tree->SetBranchAddress((nLep_==3 ? "kinMVA_3l_ttbar" : "kinMVA_2lss_ttbar_withBDTrTT"), &x );
+      tree->SetBranchAddress((nLep_==3 ? "kinMVA_3l_ttV"   : "kinMVA_2lss_ttV_withHj_rTT"  ), &y );
       tree->SetBranchAddress("_weight_", &w);
       cout << "weight" << endl;
       for (int entr = 0; entr < tree->GetEntries(); entr++){
         tree->GetEntry(entr);
         Point point = Point(x,(nLep_==3 ? 0.04804 + 0.6902*y : y),2*w); // Result of temporary fit for average dependence
-        cout << "x, y, w: " << x << ", " << y << ", " << w << endl;
+        ///// cout << "x, y, w: " << x << ", " << y << ", " << w << endl;
         if (entr % 2 == 0)
           fTTbar.push_back(point);
         else
@@ -137,15 +140,18 @@ void LikeliHOOD::readFromRootFiles()
       
       
       // Reading ttH
-      f = TFile::Open(Form("data/%s/ev_%s_TTHnobb_pow.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )), "READ" );
+      ///// f = TFile::Open(Form("data/%s/ev_%s_TTHnobb_pow.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )), "READ" );
+      f = TFile::Open( "data/" + iDir_ + "/outfile_" + (nLep_==3 ? "3l" : "2lss") + "_TTHnobb_pow.root");
       tree = (TTree*) f->Get(treeName);
-      tree->SetBranchAddress(kinTTB, &x);
-      tree->SetBranchAddress(kinTTV, &y);
+      ///// tree->SetBranchAddress(kinTTB, &x);
+      ///// tree->SetBranchAddress(kinTTV, &y);
+      tree->SetBranchAddress((nLep_==3 ? "kinMVA_3l_ttbar" : "kinMVA_2lss_ttbar_withBDTrTT"), &x );
+      tree->SetBranchAddress((nLep_==3 ? "kinMVA_3l_ttV"   : "kinMVA_2lss_ttV_withHj_rTT"  ), &y );
       tree->SetBranchAddress("_weight_", &w);
       for (int entr = 0; entr < tree->GetEntries(); entr++){
         tree->GetEntry(entr);
         Point point = Point(x,y,2*w);
-        cout << "x, y, w: " << x << ", " << y << ", " << w << endl;
+        ///// cout << "x, y, w: " << x << ", " << y << ", " << w << endl;
         if (entr % 2 == 0)
           fTTH.push_back(point);
         else
@@ -153,7 +159,7 @@ void LikeliHOOD::readFromRootFiles()
       }
       f->Close();
       
-      if(nLep_==3)
+      if(nLep_==3 && false)
         {
           // Reading ttH ext
           f = TFile::Open(Form("data/%s/ev_%s_TTHnobb_pow_offset1.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )), "READ" );
@@ -164,7 +170,7 @@ void LikeliHOOD::readFromRootFiles()
           for (int entr = 0; entr < tree->GetEntries(); entr++){
             tree->GetEntry(entr);
             Point point = Point(x,y,2*w);
-            cout << "x, y, w: " << x << ", " << y << ", " << w << endl;
+            ///// cout << "x, y, w: " << x << ", " << y << ", " << w << endl;
             if (entr % 2 == 0)
               fTTH.push_back(point);
             else
@@ -175,15 +181,18 @@ void LikeliHOOD::readFromRootFiles()
       cout << "TTH events " << fTTH.size() << endl;
 
       // Reading ttV
-      f = TFile::Open(Form("data/%s/ev_%s_TTV.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )), "READ");
+      ///// f = TFile::Open(Form("data/%s/ev_%s_TTV.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )), "READ");
+      f = TFile::Open( "data/" + iDir_ + "/outfile_" + (nLep_==3 ? "3l" : "2lss") + "_TTV.root");
       tree = (TTree*) f->Get(treeName);
-      tree->SetBranchAddress(kinTTB, &x);
-      tree->SetBranchAddress(kinTTV, &y);
+      ///// tree->SetBranchAddress(kinTTB, &x);
+      ///// tree->SetBranchAddress(kinTTV, &y);
+      tree->SetBranchAddress((nLep_==3 ? "kinMVA_3l_ttbar" : "kinMVA_2lss_ttbar_withBDTrTT"), &x );
+      tree->SetBranchAddress((nLep_==3 ? "kinMVA_3l_ttV"   : "kinMVA_2lss_ttV_withHj_rTT"  ), &y );
       tree->SetBranchAddress("_weight_", &w);
       for (int entr = 0; entr < tree->GetEntries(); entr++){
         tree->GetEntry(entr);
         Point point = Point(x,y,2*w);
-        cout << "x, y, w: " << x << ", " << y << ", " << w << endl;
+        ///// cout << "x, y, w: " << x << ", " << y << ", " << w << endl;
         if (entr % 2 == 0)
           fTTW.push_back(point);
         else
@@ -191,7 +200,7 @@ void LikeliHOOD::readFromRootFiles()
       }
       f->Close();
       
-      if(nLep_==3)
+      if(nLep_==3 && false)
         {
           // Reading ttV ext
           f = TFile::Open(Form("data/%s/ev_%s_TTV_offset1.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )), "READ");
@@ -202,7 +211,7 @@ void LikeliHOOD::readFromRootFiles()
           for (int entr = 0; entr < tree->GetEntries(); entr++){
             tree->GetEntry(entr);
             Point point = Point(x,y,2*w);
-            cout << "x, y, w: " << x << ", " << y << ", " << w << endl;
+            ///// cout << "x, y, w: " << x << ", " << y << ", " << w << endl;
             if (entr % 2 == 0)
               fTTW.push_back(point);
             else
@@ -387,7 +396,7 @@ void LikeliHOOD::MakeLikeliHood()
 }
 
 Double_t LikeliHOOD::GetLikeLiHood(Point pt){
-  cout << "Getting likelihood " << pt << " " << hRtio->GetBinContent(hRtio->FindBin(pt.fX,pt.fY)) << endl;
+  //cout << "Getting likelihood " << pt << " " << hRtio->GetBinContent(hRtio->FindBin(pt.fX,pt.fY)) << endl;
   return hRtio->GetBinContent(hRtio->FindBin(pt.fX,pt.fY));
 }
 
@@ -518,8 +527,8 @@ void LikeliHOOD::StoreToFile()
       int bin = hTargetBinning->GetBin(ix,iy);
       int k   = GetCluster( Point(hTargetBinning->GetXaxis()->GetBinCenter(ix),
 				  hTargetBinning->GetYaxis()->GetBinCenter(iy),-1));
-      cout << hTargetBinning->GetXaxis()->GetBinCenter(ix) << " "
-	   << hTargetBinning->GetYaxis()->GetBinCenter(iy) << " " << k << endl;
+      ///// cout << hTargetBinning->GetXaxis()->GetBinCenter(ix) << " "
+      /////   << hTargetBinning->GetYaxis()->GetBinCenter(iy) << " " << k << endl;
       hTargetBinning->SetBinContent(bin,k);
     }
   }
@@ -536,7 +545,7 @@ void LikeliHOOD::VoronoiPlot()
   for (Double_t x = -1; x < 1.; x = x + 1e-3){
       for (Double_t y = -1; y < 1.; y = y + 1e-3){
 	Int_t k = GetCluster(Point(x,y,-1));
-	cout << k << endl;
+	///cout << k << endl;
 	X[k].push_back(x);
 	Y[k].push_back(y);
 	// cout << "Pushed " << endl;

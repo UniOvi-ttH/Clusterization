@@ -26,12 +26,12 @@ void runDaClusterfuck(TString iDir, TString version, Int_t nLeps)
   cout << nBins << " bins." <<  endl;
   //gSystem->CompileMacro(cfDir+"LikeliHOOD.C++");
   //gSystem->Load(cfDir+"LikeliHOOD_C.so");
-  nBins=5;
+  //nBins=5; // test
   LikeliHOOD l(iDir, nBins, nLeps, "root", 1);
   l.Test();
   l.VoronoiPlot();
 
-  gSystem->Exec(Form("mkdir %s",oDir.Data()));
+  gSystem->Exec(Form("mkdir -p %s",oDir.Data()));
   gSystem->Exec(Form("mv cumulative* %s",oDir.Data()));
   gSystem->Exec(Form("mv likelihoodBased* %s",oDir.Data()));
   gSystem->Exec(Form("mv binning_* %s",oDir.Data()));

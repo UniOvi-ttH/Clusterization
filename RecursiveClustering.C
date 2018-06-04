@@ -466,9 +466,9 @@ void RecursiveClustering::readFromRootFiles()
   TBranch *bY = 0;
   TBranch *bW = 0;
 
-  Double_t x = 0.;
-  Double_t y = 0.;
-  Double_t w = 0.;
+  Float_t x = 0.;
+  Float_t y = 0.;
+  Float_t w = 0.;
 
   Float_t cx(0.);
   Float_t cy(0.);
@@ -484,10 +484,9 @@ void RecursiveClustering::readFromRootFiles()
       tree = (TTree*) f->Get("t");
       //tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &x, "kinMVA_2lss_ttbar_withBDTv8/F");
       //tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &y, "kinMVA_2lss_ttV_withHj/F");
-      tree->Branch("kinMVA_2lss_ttbar_withBDTrTT", &x , "kinMVA_2lss_ttbar_withBDTrTT/F");
-      tree->Branch("kinMVA_2lss_ttV_withHj_rTT"  , &y , "kinMVA_2lss_ttV_withHj_rTT/F");
-
-      tree->Branch("_weight_", &w, "_weight_/F");
+      tree->SetBranchAddress((nLep_==3 ? "kinMVA_3l_ttbar" : "kinMVA_2lss_ttbar_withBDTrTT"), &x );
+      tree->SetBranchAddress((nLep_==3 ? "kinMVA_3l_ttV"   : "kinMVA_2lss_ttV_withHj_rTT"  ), &y );
+      tree->SetBranchAddress("_weight_", &w);
       for (int entr = 0; entr < tree->GetEntries(); entr++){
         tree->GetEntry(entr);
         APoint point = APoint(x,y,2*w);
@@ -508,9 +507,9 @@ void RecursiveClustering::readFromRootFiles()
       tree = (TTree*) f->Get("t");
       //tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &x, "kinMVA_2lss_ttbar_withBDTv8/F");
       //tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &y, "kinMVA_2lss_ttV_withHj/F");
-      tree->Branch("kinMVA_2lss_ttbar_withBDTrTT", &x , "kinMVA_2lss_ttbar_withBDTrTT/F");
-      tree->Branch("kinMVA_2lss_ttV_withHj_rTT"  , &y , "kinMVA_2lss_ttV_withHj_rTT/F");
-      tree->Branch("_weight_", &w, "_weight_/F");
+      tree->SetBranchAddress((nLep_==3 ? "kinMVA_3l_ttbar" : "kinMVA_2lss_ttbar_withBDTrTT"), &x );
+      tree->SetBranchAddress((nLep_==3 ? "kinMVA_3l_ttV"   : "kinMVA_2lss_ttV_withHj_rTT"  ), &y );
+      tree->SetBranchAddress("_weight_", &w);
       for (int entr = 0; entr < tree->GetEntries(); entr++){
         tree->GetEntry(entr);
         APoint point = APoint(x,y,2*w);
@@ -530,9 +529,9 @@ void RecursiveClustering::readFromRootFiles()
       tree = (TTree*) f->Get("t");
       //tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &x, "kinMVA_2lss_ttbar_withBDTv8/F");
       //tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &y, "kinMVA_2lss_ttV_withHj/F");
-      tree->Branch("kinMVA_2lss_ttbar_withBDTrTT", &x , "kinMVA_2lss_ttbar_withBDTrTT/F");
-      tree->Branch("kinMVA_2lss_ttV_withHj_rTT"  , &y , "kinMVA_2lss_ttV_withHj_rTT/F");
-      tree->Branch("_weight_", &w, "_weight_/F");
+      tree->SetBranchAddress((nLep_==3 ? "kinMVA_3l_ttbar" : "kinMVA_2lss_ttbar_withBDTrTT"), &x );
+      tree->SetBranchAddress((nLep_==3 ? "kinMVA_3l_ttV"   : "kinMVA_2lss_ttV_withHj_rTT"  ), &y );
+      tree->SetBranchAddress("_weight_", &w);
       for (int entr = 0; entr < tree->GetEntries(); entr++){
         tree->GetEntry(entr);
         APoint point = APoint(x,y,2*w);
